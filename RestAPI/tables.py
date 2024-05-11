@@ -29,6 +29,8 @@ class Object(Base):
     policies = relationship("Policy", back_populates="object")
 
 class Policy(Base):
+
+    
     """
     Creating table with policies -
     who will be able to access what

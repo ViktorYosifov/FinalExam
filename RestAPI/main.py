@@ -6,6 +6,7 @@ from sqlite_database import SessionLocal, engine
 import pydantic_models
 
 
+
 app = FastAPI()
 
 
@@ -17,7 +18,7 @@ app = FastAPI()
 #     finally:
 #         db.close()
 
-@app.post("/create_user", response_model=pydantic_models.CreateUser)
+@app.post("/create_user", response_model=pydantic_models.ShowUser) #user already created -> response = ShowUser;
 def create_user(user: pydantic_models.CreateUser):
     db = SessionLocal()
     new_user = pydantic_models.CreateUser(first_name=user.first_name,
@@ -29,8 +30,37 @@ def create_user(user: pydantic_models.CreateUser):
     db.refresh(new_user)
     return new_user
 
-@app.get("/all_users_listed", response_model=pydantic_models.ShowUser)
-def list_all_users(user: pydantic_models.ShowUser):
+@app.post("/create_object")
+def create_object(object: pydantic_models.CreateObject):
+    pass
+
+@app.post("/create_policy")
+def create_policy(policy: pydantic_models.CreatePolicy):
+    pass
+
+
+@app.get("/show_users", response_model=pydantic_models.ShowUser)# include List from typing; response modela e list ot showuser;
+def show_users(user: pydantic_models.ShowUser):
     db = SessionLocal()
-    users = db.query(User).all()
+
+@app.get("/show_objects")
+def show_objects(object: pydantic_models.ShowObject):
+    pass
+
+@app.get("/show_policy")
+def show_policy(policy: pydantic_models.ShowPolicy):
+    pass
+
+
+@app.delete("/delete_user")
+def delete_user(user: pydantic_models.ShowUser):
+    db = SessionLocal()
+
+@app.delete("/delete_object")
+def delete_object(object: pydantic_models.ShowObject):
+    db = SessionLocal()
+
+@app.delete("/delete_policy")
+def delete_policy(policy: pydantic_models.ShowPolicy):
+    pass
 
