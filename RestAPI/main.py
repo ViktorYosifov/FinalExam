@@ -1,66 +1,81 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from sqlite_database import SessionLocal, engine
-import pydantic_models
+from typing import List
 
-
+from . import models, schemas, crud, database
+from .logging_config import logger
 
 app = FastAPI()
 
+@app.on_event("startup")
+async def startup():
+    await database.database.connect()
+    models.Base.metadata.create_all(bind=database.engine)
 
-# #Dependancy
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield  db
-#     finally:
-#         db.close()
+@app.on_event("shutdown")
+async def shutdown():
+    await database.database.disconnect()
 
-@app.post("/create_user", response_model=pydantic_models.ShowUser) #user already created -> response = ShowUser;
-def create_user(user: pydantic_models.CreateUser):
-    db = SessionLocal()
-    new_user = pydantic_models.CreateUser(first_name=user.first_name,
-                                          last_name=user.last_name,
-                                          username=user.username,
-                                          email=user.email)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+async def get_db():
+    async with Session(database.engine) as session:
+        yield session
 
-@app.post("/create_object")
-def create_object(object: pydantic_models.CreateObject):
-    pass
+@app.post("/users/", response_model=schemas.CreateUser)
+async def create_user(user: schemas.CreateUser, db: Session = Depends(get_db)):
+    db_user = await crud.create_user(db, user)
+    logger.info(f"User {user.username} created")
+    return db_user
 
-@app.post("/create_policy")
-def create_policy(policy: pydantic_models.CreatePolicy):
-    pass
+@app.delete("/users/{user_id}")
+async def delete_user(user_id: int, db: Session = Depends(get_db)):
+    policies = await crud.get_policies_by_user(db, user_id)
+    if policies:
+        raise HTTPException(status_code=400, detail="Cannot delete user whith existing policies")
+    await crud.delete_user(db, user_id)
+    logger.info(f"User {user_id} deleted")
+    return JSONResponse(status_code=204)
 
+@app.get("/users/", response_model=List[schemas.CreateUser])
+async def list_users(db: Session = Depends(get_db)):
+    return await crud.get_users(db)
 
-@app.get("/show_users", response_model=pydantic_models.ShowUser)# include List from typing; response modela e list ot showuser;
-def show_users(user: pydantic_models.ShowUser):
-    db = SessionLocal()
+@app.post("/objects/", response_model=schemas.CreateObject)
+async def create_object(object: schemas.CreateObject, db: Session = Depends(get_db)):
+    db_object = await crud.create_object(db, object)
+    logger.info(f"Object {object.path} created")
+    return db_object
 
-@app.get("/show_objects")
-def show_objects(object: pydantic_models.ShowObject):
-    pass
+@app.delete("/objects/{object_id}")
+async def delete_object(object_id: int, db: Session = Depends(get_db)):
+    policies = await crud.get_policies_by_object(db, object_id)
+    if policies:
+        await crud.delete_policy(db, policies)
+        logger.info(f"Deleted policies related to object {object_id}")
+    await crud.delete_object(db, object_id)
+    logger.info(f"Object {object_id} deleted")
+    return JSONResponse(status_code=204)
 
-@app.get("/show_policy")
-def show_policy(policy: pydantic_models.ShowPolicy):
-    pass
+@app.get("/objects/", response_model=List[schemas.CreateObject])
+async def list_objects(db: Session = Depends(get_db)):
+    return await crud.get_objects(db)
 
+@app.post("/policies/", response_model=schemas.CreatePolicy)
+async def create_policy(policy: schemas.CreatePolicy, db: Session = Depends(get_db)):
+    db_policy = await crud.create_policy(db, policy)
+    logger.info(f"Policy created for user {policy.user_id} on object {policy.object_id}")
+    return db_policy
 
-@app.delete("/delete_user")
-def delete_user(user: pydantic_models.ShowUser):
-    db = SessionLocal()
+@app.delete("/policies/{policy_id}")
+async def delete_policy(policy_id: int, db: Session = Depends(get_db)):
+    await crud.delete_policy(db, policy_id)
+    logger.info(f"Policy {policy_id} deleted")
+    return JSONResponse(status_code=204)
 
-@app.delete("/delete_object")
-def delete_object(object: pydantic_models.ShowObject):
-    db = SessionLocal()
+@app.get("/policies/user/{user_id}")
+async def list_policies_by_user(user_id: int, db: Session = Depends(get_db)):
+    return await crud.get_policies_by_user(db, user_id)
 
-@app.delete("/delete_policy")
-def delete_policy(policy: pydantic_models.ShowPolicy):
-    pass
-
+@app.get("/policies/object/{object_id}")
+async def list_policies_by_object(object_id: int, db: Session = Depends(get_db)):
+    return await crud.get_policies_by_object(db, object_id)

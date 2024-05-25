@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlite_database import Base
+from .database import Base
 
 class User(Base):
     """
@@ -10,10 +10,10 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    first_name = Column(String)
-    last_name = Column(String)
-    username = Column(String)
-    email = Column(String)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    username = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False)
     policies = relationship("Policy", back_populates="user")
 
 class Object(Base):
@@ -25,7 +25,7 @@ class Object(Base):
     __tablename__ = "objects"
 
     id = Column(Integer, primary_key=True, index=True)
-    path = Column(String)
+    path = Column(String, nullable=False)
     policies = relationship("Policy", back_populates="object")
 
 class Policy(Base):
@@ -39,8 +39,8 @@ class Policy(Base):
     __tablename__ = "policies"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    object_id = Column(Integer, ForeignKey("object.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    object_id = Column(Integer, ForeignKey("object.id"), nullable=False)
     user = relationship("User", back_populates="policies")
     object = relationship("Object", back_populates="policies")
 
