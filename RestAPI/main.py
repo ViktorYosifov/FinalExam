@@ -3,8 +3,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List
 
-from . import models, schemas, crud, database
-from .logging_config import logger
+import models, schemas, crud, database
+from logging_config import logger
 
 app = FastAPI()
 

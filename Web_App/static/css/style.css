@@ -1,0 +1,19 @@
+body {
+    padding-top: 56px;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+.table th, .table td {
+    vertical-align: middle;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.btn {
+    margin-right: 0.5rem;
+}

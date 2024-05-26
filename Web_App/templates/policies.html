@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Policies</h2>
+<form action="{{ url_for('create_policy') }}" method="post">
+    <div class="form-group">
+        <label for="user_id">User ID</label>
+        <input type="number" class="form-control" id="user_id" name="user_id" required>
+    </div>
+    <div class="form-group">
+        <label for="object_id">Object ID</label>
+        <input type="number" class="form-control" id="object_id" name="object_id" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Create Policy</button>
+</form>
+<table class="table table-striped mt-4">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>User ID</th>
+            <th>Object ID</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for policy in policies %}
+        <tr>
+            <td>{{ policy.id }}</td>
+            <td>{{ policy.user_id }}</td>
+            <td>{{ policy.object_id }}</td>
+            <td>
+                <form action="{{ url_for('delete_policy', policy_id=policy.id) }}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

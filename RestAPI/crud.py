@@ -1,6 +1,6 @@
 from sqlalchemy.future import select
 from sqlalchemy.orm import Session
-from . import models,schemas
+import models, schemas
 
 async def create_user(db: Session, user: schemas.CreateUser):
     db_user = models.User(
